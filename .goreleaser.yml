@@ -38,10 +38,6 @@ dockers:
       - "--label=org.opencontainers.image.version={{.Version}}"
       - "--label=org.opencontainers.image.licenses=Apache-2.0"
       - "--platform=linux/amd64"
-    extra_files:
-      - go.mod
-      - go.sum
-      - "*.go"
   - image_templates:
       - "ghcr.io/prometheus-community/ipmi-exporter:{{ .Version }}-arm64"
       - "ghcr.io/prometheus-community/ipmi-exporter:latest-arm64"
@@ -55,10 +51,6 @@ dockers:
       - "--label=org.opencontainers.image.licenses=Apache-2.0"
       - "--platform=linux/arm64"
     goarch: arm64
-    extra_files:
-      - go.mod
-      - go.sum
-      - "*.go"
 docker_manifests:
   - name_template: "ghcr.io/prometheus-community/ipmi-exporter:{{ .Version }}"
     image_templates:
