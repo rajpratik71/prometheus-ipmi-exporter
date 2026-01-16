@@ -15,6 +15,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"log/slog"
 	"net/http"
 	"os"
@@ -44,6 +45,14 @@ var (
 	nativeIPMI = kingpin.Flag(
 		"native-ipmi",
 		"Use native IPMI implementation instead of FreeIPMI (EXPERIMENTAL)",
+	).Bool()
+	testMode = kingpin.Flag(
+		"test",
+		"Run comprehensive IPMI tests to validate all implementations and show results table",
+	).Bool()
+	testDebug = kingpin.Flag(
+		"test.debug",
+		"Show detailed debug information including metric values during testing",
 	).Bool()
 	webConfig = webflag.AddFlags(kingpin.CommandLine, ":9290")
 
@@ -108,6 +117,38 @@ func main() {
 	if *nativeIPMI {
 		logger.Info("Using Go-native IPMI implementation - this is currently EXPERIMENTAL")
 		logger.Info("Make sure to read https://github.com/prometheus-community/ipmi_exporter/blob/master/docs/native.md")
+	}
+
+	// Check if test mode is enabled
+	if *testMode {
+		logger.Info("Running in test mode - validating all IPMI implementations")
+
+		// Bail early if the config is bad.
+		if err := sc.ReloadConfig(*configFile); err != nil {
+			logger.Error("Error parsing config file", "error", err)
+			os.Exit(1)
+		}
+
+		// Create a standard logger for the test suite
+		testLogger := log.New(os.Stdout, "[TEST] ", log.LstdFlags)
+
+		// Create and run test suite
+		testSuite := NewTestSuite(sc, testLogger, *testDebug)
+		testSuite.RunAllTests()
+
+		// Print results table
+		testSuite.PrintResultsTable()
+
+		// Get summary and exit with appropriate code
+		passed, failed, total, _ := testSuite.GetSummary()
+		logger.Info("Test suite completed", "passed", passed, "failed", failed, "total", total)
+
+		if failed > 0 {
+			logger.Error("Some tests failed - see output above for details")
+			os.Exit(1)
+		}
+		logger.Info("All tests passed successfully!")
+		os.Exit(0)
 	}
 
 	// Bail early if the config is bad.

@@ -76,7 +76,7 @@ snapshot:
 	goreleaser release --snapshot --rm-dist
 
 # Local testing commands
-.PHONY: test-local test-docker test-docker-buildx test-release
+.PHONY: test-local test-docker test-docker-buildx test-release docker-local docker-test docker-test-debug docker-compose-up docker-compose-down
 
 test-local:
 	@echo ">> testing goreleaser configuration locally"
@@ -95,8 +95,37 @@ test-release:
 	@echo ">> testing full release process locally (dry run)"
 	goreleaser release --clean --skip=validate --skip=publish
 
+# Local Docker development commands
+docker-local:
+	@echo ">> building local Docker image with multi-stage build"
+	docker build -f Dockerfile.local -t ipmi-exporter:local .
+
+docker-test:
+	@echo ">> running IPMI exporter test mode in Docker"
+	docker run --rm --privileged \
+		-v $(PWD)/ipmi_local.yml:/etc/ipmi-exporter/ipmi-local.yml:ro \
+		ipmi-exporter:local --test
+
+docker-test-debug:
+	@echo ">> running IPMI exporter test mode in Docker with debug output"
+	docker run --rm --privileged \
+		-v $(PWD)/ipmi_local.yml:/etc/ipmi-exporter/ipmi-local.yml:ro \
+		ipmi-exporter:local --test --test.debug
+
+docker-compose-up:
+	@echo ">> starting local development environment"
+	docker-compose -f docker-compose.local.yml up -d
+
+docker-compose-down:
+	@echo ">> stopping local development environment"
+	docker-compose -f docker-compose.local.yml down
+
+docker-compose-logs:
+	@echo ">> showing logs from local development environment"
+	docker-compose -f docker-compose.local.yml logs -f
+
 # Act workflow testing (requires act CLI)
-.PHONY: test-workflow
+.PHONY: test-workflow docker-compose-logs
 
 test-workflow:
 	@echo ">> testing GitHub workflow locally with act"
