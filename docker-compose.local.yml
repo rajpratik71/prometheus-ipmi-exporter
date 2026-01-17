@@ -11,8 +11,8 @@ services:
     ports:
       - "9290:9290"
     volumes:
-      - ./ipmi_local.yml:/etc/ipmi-exporter/ipmi-local.yml:ro
-      - ./ipmi_remote.yml:/etc/ipmi-exporter/ipmi-remote.yml:ro
+      - ./ipmi-local.yml:/etc/ipmi-exporter/ipmi-local.yml:ro
+      - ./ipmi-remote.yml:/etc/ipmi-exporter/ipmi-remote.yml:ro
     environment:
       - TZ=UTC
     # IPMI access typically requires privileged mode
@@ -30,7 +30,7 @@ services:
     container_name: ipmi-exporter-test
     command: ["--test"]
     volumes:
-      - ./ipmi_local.yml:/etc/ipmi-exporter/ipmi-local.yml:ro
+      - ./ipmi-local.yml:/etc/ipmi-exporter/ipmi-local.yml:ro
     environment:
       - TZ=UTC
     # IPMI access typically requires privileged mode

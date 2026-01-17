@@ -38,6 +38,10 @@ var (
 		"config.file",
 		"Path to configuration file.",
 	).String()
+	configMode = kingpin.Flag(
+		"config.mode",
+		"Configuration mode: local, remote, local-sudo, or custom. Automatically selects appropriate config file.",
+	).Enum("local", "remote", "local-sudo", "custom")
 	executablesPath = kingpin.Flag(
 		"freeipmi.path",
 		"Path to FreeIPMI executables (default: rely on $PATH).",
@@ -116,7 +120,31 @@ func main() {
 	logger.Info("Starting ipmi_exporter", "version", version.Info())
 	if *nativeIPMI {
 		logger.Info("Using Go-native IPMI implementation - this is currently EXPERIMENTAL")
-		logger.Info("Make sure to read https://github.com/prometheus-community/ipmi_exporter/blob/master/docs/native.md")
+		logger.Info("Make sure to read https://github.com/monitoring-projects/ipmi_exporter/blob/master/docs/native.md")
+	}
+
+	// Handle configuration mode selection
+	if *configMode != "" && *configFile == "" {
+		switch *configMode {
+		case "local":
+			*configFile = "/etc/ipmi-exporter/ipmi-local.yml"
+			logger.Info("Using local configuration mode", "config", *configFile)
+		case "remote":
+			*configFile = "/etc/ipmi-exporter/ipmi-remote.yml"
+			logger.Info("Using remote configuration mode", "config", *configFile)
+		case "local-sudo":
+			*configFile = "/etc/ipmi-exporter/ipmi-local-sudo.yml"
+			logger.Info("Using local-sudo configuration mode", "config", *configFile)
+		case "custom":
+			*configFile = "/etc/ipmi-exporter/ipmi-custom.yml"
+			logger.Info("Using custom configuration mode", "config", *configFile)
+		}
+	} else if *configMode != "" && *configFile != "" {
+		logger.Info("Using specified configuration file", "mode", *configMode, "config", *configFile)
+	} else if *configFile == "" {
+		// Default to local mode if no config specified
+		*configFile = "/etc/ipmi-exporter/ipmi-local.yml"
+		logger.Info("No configuration specified, using default local mode", "config", *configFile)
 	}
 
 	// Check if test mode is enabled
